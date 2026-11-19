@@ -110,9 +110,9 @@ function mirror(p) { parts.push({name:p.name.replace('左','右'), n:p.n, depth:
   const ys = [[6, 25], [6, 25], [6, 25], [6, 24], [7, 23], [7, 22], [8, 20], [10, 17]];   // 横の前端・後端
   const p = part('キャップ'); p.depth = 16;
   prof(p, 39, 46, z => { const [a, b] = ys[z - 39]; return {hw: hw[z - 39], cy: (a + b) / 2, hd: (b - a + 1) / 2 - 0.01, c: P.K1}; });
-  box(p.front, 11, 20, 40, 45, P.W1); box(p.front, 12, 19, 46, 46, P.W1);               // 白い前パネル
+  box(p.front, 8, 23, 40, 45, P.W1); box(p.front, 9, 22, 46, 46, P.W1);               // 白い前パネル
   box(p.front, 18, 19, 42, 43, P.L1); px(p.front, 20, 42, P.L1);                        // 花のマーク
-  for (let z = 40; z <= 46; z++) for (let y = 0; y <= 10; y++) px(p.side, y, z, P.W1);
+  for (let z = 40; z <= 46; z++) for (let y = 0; y <= 12; y++) px(p.side, y, z, P.W1);
   box(p.side, 9, 10, 42, 43, P.L1);
   box(p.back, 0, 31, 39, 39, P.K2); box(p.back, 14, 17, 39, 41, P.H2); box(p.back, 13, 18, 41, 41, P.K2); // 後ろの穴とベルト
   const b = part('つば');                                           // 前へ長く、平たく
