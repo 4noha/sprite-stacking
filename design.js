@@ -43,9 +43,11 @@ function mirror(p) { parts.push({name:p.name.replace('左','右'), n:p.n, depth:
   for (const g of [p.front, p.back]) { box(g, 3, 3, 13, 21, P.H1); box(g, 5, 5, 10, 22, P.H3); }
   box(p.side, 0, 27, 16, 18, P.H1);
   mirror(p); }
-// ---- 猫しっぽ（裾の下から出て後ろへ）+ 背中のリボン ----
+// ---- 背中のリボン + 猫しっぽ（リボンのすぐ下から出て、下へ垂れて後ろへ流れる）----
 { const p = part('しっぽ');
-  prof(p, 6, 18, z => ({cx: 15.5 + Math.round((z - 6) / 12 * 3), hw: 1, cy: CY + 6 + Math.round(Math.min(1, (z - 6) / 5) * 4), hd: 1, c: z >= 17 ? P.H1 : P.H2}));
+  prof(p, 5, 12, z => { const t = (12 - z) / 7;
+    return z <= 6 ? {cx: 17.5, hw: 1, cy: CY + 9.5, hd: 2, c: z === 5 ? P.H3 : P.H1}
+                  : {cx: 15.5 + Math.round(t * 2), hw: 1, cy: CY + 6 + Math.round(t * 3), hd: 1, c: P.H2}; });
   const r = part('リボン', 4);
   prof(r, 13, 15, z => ({hw: z === 14 ? 1 : 3, cy: CY + 6, hd: 1, c: P.RB}));
   box(r.back, 15, 16, 13, 15, P.H1); }
