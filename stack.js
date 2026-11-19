@@ -61,3 +61,30 @@ function compose(kind) {
   return out;
 }
 function drawView(ctx, v, x0, y0) { v.forEach((r, z) => r.forEach((c, a) => { if (c) { ctx.fillStyle = c; ctx.fillRect(x0 + a, y0 + H - 1 - z, 1, 1); } })); }
+
+// ---- 自由な角度で描く ---------------------------------------------------------
+// 積んだスライスの画素を1つずつ、向き(yaw)と見下ろし角(elev)で投影して点として打つ。
+// 手前の画素を残す（深度比較）ので、真横・真上・下からでも破綻しない。
+function surfaceVoxels(vox) {
+  const out = [], at = (x, y, z) => x >= 0 && x < W && y >= 0 && y < D && z >= 0 && z < H && vox[z][y][x];
+  for (let z = 0; z < H; z++) for (let y = 0; y < D; y++) for (let x = 0; x < W; x++) {
+    const c = vox[z][y][x]; if (!c) continue;
+    if (at(x-1,y,z) && at(x+1,y,z) && at(x,y-1,z) && at(x,y+1,z) && at(x,y,z-1) && at(x,y,z+1)) continue;   // 内側は描かない
+    out.push([x + .5 - W / 2, y - CY, z + .5 - H / 2, ...hex(c)]);
+  }
+  return out;
+}
+function renderVox(sv, w, h, yawDeg, elevDeg, sp, Z) {
+  const img = new ImageData(w, h), d = img.data, zb = new Float32Array(w * h).fill(1e9);
+  const a = yawDeg * Math.PI / 180, e = elevDeg * Math.PI / 180, ca = Math.cos(a), sa = Math.sin(a), ce = Math.cos(e), se = Math.sin(e);
+  const s = Math.ceil(Z * 1.75), o = s / 2, cx = w / 2, cy = h / 2;
+  for (const [X, Y, Zu0, r, g, b] of sv) {
+    const Zu = Zu0 * sp, xr = X * ca - Y * sa, yr = X * sa + Y * ca;        // yr: 奥行（大きいほど奥）
+    const sx = Math.round(cx + xr * Z - o), sy = Math.round(cy - (Zu * ce + yr * se) * Z - o), dep = yr * ce - Zu * se;
+    for (let j = 0; j < s; j++) { const py = sy + j; if (py < 0 || py >= h) continue;
+      for (let i = 0; i < s; i++) { const pxx = sx + i; if (pxx < 0 || pxx >= w) continue;
+        const k = py * w + pxx; if (dep >= zb[k]) continue; zb[k] = dep;
+        d[k * 4] = r; d[k * 4 + 1] = g; d[k * 4 + 2] = b; d[k * 4 + 3] = 255; } }
+  }
+  return img;
+}
