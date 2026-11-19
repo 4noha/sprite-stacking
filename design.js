@@ -106,9 +106,22 @@ function mirror(p) { parts.push({name:p.name.replace('左','右'), n:p.n, depth:
   sym(p.front, 9, 29, P.BL); sym(p.front, 10, 29, P.BL); box(p.front, 15, 16, 28, 28, P.MO);
   // 横: 顔は前側だけ、目を1つ、横髪を残す
   for (let z = 26; z <= 36; z++) for (let y = 0; y <= (z <= 29 ? 12 : 10); y++) px(p.side, y, z, P.S1);
-  box(p.side, 8, 9, 33, 33, P.K2); box(p.side, 8, 9, 30, 32, P.E2); box(p.side, 9, 9, 30, 31, P.E1);
+  box(p.side, 7, 8, 33, 33, P.K2); box(p.side, 7, 8, 30, 32, P.E2); box(p.side, 8, 8, 30, 31, P.E1);   // 目は顔の最前面だけ（側面に回り込ませない）
   box(p.side, 11, 12, 28, 36, P.H2); box(p.side, 13, 20, 36, 37, P.H1);
   box(p.back, 9, 13, 36, 36, P.H1); box(p.back, 18, 22, 36, 36, P.H1); }
+// ---- 前髪（顔より1px前に出る。隙間は絵の穴として抜く）と横髪（頬の横に張り出す房）----
+{ const p = part('前髪'); p.depth = 9;
+  prof(p, 33, 38, () => ({hw: 9, cy: 10, hd: 4, c: P.H2}));
+  const bz = [33, 35, 37, 37, 36, 37, 36, 34];
+  for (let z = 33; z <= 38; z++) for (let x = 7; x <= 24; x++) {
+    const i = x <= 15 ? x - 8 : 23 - x;
+    if (i >= 0 && z < bz[i]) p.front[z][x] = null; else if (z === 38) p.front[z][x] = P.H3;
+  }
+  for (let z = 33; z <= 38; z++) for (let x = 0; x < W; x++) p.back[z][x] = p.front[z][x];
+  const s = part('横髪左'); s.depth = 10;
+  prof(s, 28, 37, z => ({cx: 6.5, hw: 1.5, cy: CY - 4, hd: z <= 29 ? 3 : 4, c: z <= 29 ? P.H3 : P.H2}));
+  box(s.front, 6, 6, 30, 36, P.H1);
+  mirror(s); }
 // ---- キャップ（頭の上に浅く乗る。前パネルが白、ほかは黒。前が立ち、後ろへなだらか）----
 { const hw = [10, 10, 10, 10, 9, 9, 7, 5];                         // z=39..46 の半幅
   const ys = [[6, 25], [6, 25], [6, 25], [6, 24], [7, 23], [7, 22], [8, 20], [10, 17]];   // 横の前端・後端

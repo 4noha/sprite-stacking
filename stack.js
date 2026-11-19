@@ -12,6 +12,7 @@ function buildVox() {
       const dx = (x + .5 - cx) / rx, dy = (y + .5 - cy) / ry, ax = Math.abs(dx), ay = Math.abs(dy);
       if (Math.pow(ax, p.n) + Math.pow(ay, p.n) > 1.15) continue;
       const f = p.front[z][x], b = p.back[z][x], s = p.side[z][y];
+      if (!f || !s) continue;                                     // 絵に穴があれば立体も抜く（前髪の隙間など）
       vox[z][y][x] = (ax > ay ? s : dy < 0 ? f : b) || f || b || s;
     }
   }
