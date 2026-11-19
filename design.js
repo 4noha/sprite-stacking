@@ -133,7 +133,7 @@ function mirror(p) { parts.push({name:p.name.replace('左','右'), n:p.n, depth:
   box(p.back, 0, 31, 39, 39, P.K2); box(p.back, 14, 17, 39, 41, P.H2); box(p.back, 13, 18, 41, 41, P.K2); // 後ろの穴とベルト
   const b = part('つば');                                           // 前へ長く、平たく
   prof(b, 38, 39, z => ({hw: 9, cy: 5, hd: 4, c: z === 38 ? P.K2 : P.K1}));
-  symbox(b.front, 8, 11, 38, 38, P.T); box(b.side, 1, 4, 38, 38, P.T); }
+}
 // ---- 猫耳（キャップの脇から出る）----
 { const p = part('猫耳左'); p.depth = 16;
   prof(p, 43, 47, z => z <= 45 ? {cx: 8.5, hw: 2, hd: 2, c: P.H2} : z === 46 ? {cx: 8.5, hw: 1, hd: 1, c: P.H2} : {cx: 8, hw: 0.5, hd: 1, c: P.H3});
