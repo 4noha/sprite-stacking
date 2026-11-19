@@ -119,7 +119,7 @@ function mirror(p) { parts.push({name:p.name.replace('左','右'), n:p.n, depth:
   }
   for (let z = 33; z <= 38; z++) for (let x = 0; x < W; x++) p.back[z][x] = p.front[z][x];
   const s = part('横髪左'); s.depth = 10;
-  prof(s, 28, 37, z => ({cx: 6.5, hw: 1.5, cy: CY - 4, hd: z <= 29 ? 3 : 4, c: z <= 29 ? P.H3 : P.H2}));
+  prof(s, 28, 37, z => ({cx: 6.5, hw: 1.5, cy: CY - 2.5, hd: 2.5, c: z <= 29 ? P.H3 : P.H2}));   // 横顔を隠さない奥行にする
   box(s.front, 6, 6, 30, 36, P.H1);
   mirror(s); }
 // ---- キャップ（頭の上に浅く乗る。前パネルが白、ほかは黒。前が立ち、後ろへなだらか）----
@@ -139,3 +139,7 @@ function mirror(p) { parts.push({name:p.name.replace('左','右'), n:p.n, depth:
   prof(p, 43, 47, z => z <= 45 ? {cx: 8.5, hw: 2, hd: 2, c: P.H2} : z === 46 ? {cx: 8.5, hw: 1, hd: 1, c: P.H2} : {cx: 8, hw: 0.5, hd: 1, c: P.H3});
   box(p.front, 8, 9, 44, 45, P.PK);
   mirror(p); }
+// ---- 姿勢の調整: 頭まわりを後ろへ寄せて、顔が体より前に出すぎないようにする ----
+const HEAD_BACK = 2;
+for (const p of parts) if (/^(頭|前髪|横髪|キャップ|つば|猫耳|ツインテ)/.test(p.name))
+  p.side = p.side.map(r => Array(HEAD_BACK).fill(null).concat(r.slice(0, D - HEAD_BACK)));
