@@ -66,8 +66,10 @@ function mirror(p) { parts.push({name:p.name.replace('左','右'), n:p.n, depth:
 { const p = part('ジャケット', 3);
   prof(p, 9, 24, z => ({hw: z <= 17 ? 7 : z <= 21 ? 6 : 5, hd: z <= 17 ? 6 : z <= 21 ? 5 : 4,
                         c: z === 9 ? P.W2 : z === 10 ? P.W1 : P.J1}));
-  box(p.front, 14, 17, 13, 24, P.W1); box(p.front, 15, 16, 13, 22, P.W2);               // 前立てとインナーの白
-  box(p.front, 13, 18, 9, 12, P.L1); box(p.front, 14, 17, 11, 12, P.W1);                // 裾から見えるインナー
+  box(p.front, 13, 18, 24, 24, P.W1); box(p.front, 14, 17, 23, 23, P.W1); box(p.front, 15, 16, 22, 22, P.W1); // 襟元のV（白シャツ）
+  box(p.front, 15, 16, 18, 21, P.J2);                                                   // 胸はジッパーで閉じる（細い線だけ）
+  box(p.front, 15, 16, 16, 17, P.W1); box(p.front, 14, 17, 13, 15, P.W1);               // 胸の下から逆Vに開く
+  box(p.front, 13, 18, 9, 12, P.L1); sym(p.front, 13, 12, P.W1); sym(p.front, 13, 11, P.W1); sym(p.front, 14, 12, P.W1); // 裾のインナー
   symbox(p.front, 11, 13, 23, 24, P.V1); symbox(p.front, 13, 13, 19, 22, P.J2);         // 襟（フードの縁）・前端の影
   symbox(p.front, 9, 11, 12, 14, P.J3); sym(p.front, 9, 13, P.W1); sym(p.front, 11, 13, P.W1); // 猫顔ポケット
   symbox(p.front, 9, 9, 15, 20, P.J2);
