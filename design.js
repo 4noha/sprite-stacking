@@ -1,7 +1,7 @@
 "use strict";
 // ============================================================================
-// 東雲はつり 2.5頭身・三面図（正面 32×48 / 横 28×48 / 背面 32×48）
-// パーツごとに3つの絵を持つ。ここは「設計」だけで、立体化は stack.js が絵から行う。
+// 東雲はつり 2.5頭身・四面図（正面 32×48 / 左横・右横 28×48 / 背面 32×48）
+// パーツごとに正面・横・背面の絵を持つ。横は右横（side）が基本で、左右で違うパーツだけ左横（sideL）を別に持つ。ここは「設計」だけで、立体化は stack.js が絵から行う。
 // 座標: x=左右(0..31) / y=前後(0=前, 27=後ろ) / z=高さ(0=足元, 47=耳の先)
 // 参照: VRM レンダー3方向（正面・横・背面）
 // ============================================================================
@@ -33,7 +33,8 @@ function px(g, a, z, c) { if (z >= 0 && z < H && a >= 0 && a < g[z].length && g[
 function box(g, a0, a1, z0, z1, c) { for (let z = z0; z <= z1; z++) for (let a = a0; a <= a1; a++) px(g, a, z, c); }
 function sym(g, a, z, c) { px(g, a, z, c); px(g, W - 1 - a, z, c); }
 function symbox(g, a0, a1, z0, z1, c) { for (let z = z0; z <= z1; z++) for (let a = a0; a <= a1; a++) sym(g, a, z, c); }
-function mirror(p) { parts.push({name:p.name.replace('左','右'), n:p.n, depth:p.depth, front:p.front.map(r => r.slice().reverse()), back:p.back.map(r => r.slice().reverse()), side:p.side.map(r => r.slice())}); }
+function mirror(p) { const cp = g => g.map(r => r.slice());   // 左右を入れ替えるので、横の絵も右横⇔左横を入れ替える
+  parts.push({name:p.name.replace('左','右'), n:p.n, depth:p.depth, front:p.front.map(r => r.slice().reverse()), back:p.back.map(r => r.slice().reverse()), side:cp(p.sideL ?? p.side), ...(p.sideL ? {sideL:cp(p.side)} : {})}); }
 
 // ---- ツインテール（耳の後ろで低く結び、膝まで細く垂らす）----
 { const p = part('ツインテ左');
@@ -128,8 +129,10 @@ function mirror(p) { parts.push({name:p.name.replace('左','右'), n:p.n, depth:
   const p = part('キャップ'); p.depth = 16;
   prof(p, 39, 46, z => { const [a, b] = ys[z - 39]; return {hw: hw[z - 39], cy: (a + b) / 2, hd: (b - a + 1) / 2 - 0.01, c: P.K1}; });
   box(p.front, 8, 23, 40, 45, P.W1); box(p.front, 9, 22, 46, 46, P.W1);               // 白い前パネル
-  box(p.front, 18, 19, 42, 43, P.L1); px(p.front, 20, 42, P.L1);                        // 花のマーク
+  box(p.front, 19, 20, 42, 43, P.L1); px(p.front, 21, 42, P.L1);                        // 花のマーク（向かって右寄り。左横にも回り込む）
   for (let z = 40; z <= 46; z++) for (let y = 0; y <= 12; y++) px(p.side, y, z, P.W1);
+  p.sideL = p.side.map(r => r.slice());                                                 // 左横だけ、花のマークが前の縁に見える
+  px(p.sideL, 6, 42, P.L1); px(p.sideL, 7, 43, P.L1);
   box(p.back, 0, 31, 39, 39, P.K2); box(p.back, 14, 17, 39, 41, P.H2); box(p.back, 13, 18, 41, 41, P.K2); // 後ろの穴とベルト
   const b = part('つば');                                           // 前へ長く、平たく
   prof(b, 38, 39, z => ({hw: 9, cy: 5, hd: 4, c: z === 38 ? P.K2 : P.K1}));
@@ -142,4 +145,4 @@ function mirror(p) { parts.push({name:p.name.replace('左','右'), n:p.n, depth:
 // ---- 姿勢の調整: 頭まわりを後ろへ寄せて、顔が体より前に出すぎないようにする ----
 const HEAD_BACK = 2;
 for (const p of parts) if (/^(頭|前髪|横髪|キャップ|つば|猫耳|ツインテ)/.test(p.name))
-  p.side = p.side.map(r => Array(HEAD_BACK).fill(null).concat(r.slice(0, D - HEAD_BACK)));
+  for (const k of ['side', 'sideL']) if (p[k]) p[k] = p[k].map(r => Array(HEAD_BACK).fill(null).concat(r.slice(0, D - HEAD_BACK)));
