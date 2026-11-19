@@ -32,9 +32,9 @@
     </div>
     <div class="panel">
       <div>
-        <h2>設計した三面図（正面 32×48 / 横 24×48 / 背面 32×48）</h2>
-        <canvas id="sheet" width="100" height="52"></canvas>
-        <div class="cap"><span style="flex:34">正面</span><span style="flex:28">横</span><span style="flex:34">背面</span></div>
+        <h2>設計した三面図（正面 32×48 / 横 28×48 / 背面 32×48）</h2>
+        <canvas id="sheet" width="104" height="52"></canvas>
+        <div class="cap"><span style="flex:36">正面</span><span style="flex:32">横</span><span style="flex:36">背面</span></div>
       </div>
       <label><span>角度 <span id="angv">0</span>°</span><input id="ang" type="range" min="0" max="359" value="25"></label>
       <label><span>見下ろし角（スライスの縦つぶし）<span id="tiltv">0.6</span></span><input id="tilt" type="range" min="30" max="100" value="60"></label>
@@ -62,7 +62,7 @@ let angle = +(q.get('a') ?? 25), tilt = 0.6, spread = 1, auto = q.get('auto') !=
 
 const LW = 80, LH = 88;                                       // ステージの論理サイズ（GBA等倍の画素数）
 function sprite(ctx, x0, y0, w, h, deg, sp, Z) {              // 影 → 積層 → 輪郭（x0..h は実画素）
-  const cx = x0 + w / 2, cy = y0 + h - (4 + D * tilt / 2) * Z;
+  const cx = x0 + w / 2, cy = y0 + h - (4 + 12 * tilt) * Z;
   ctx.fillStyle = 'rgba(0,0,0,.3)'; ctx.beginPath(); ctx.ellipse(cx, cy, 11 * Z, 11 * tilt * Z, 0, 0, 7); ctx.fill();
   drawStack(ctx, layers, cx, cy, deg, tilt, sp, Z);
   if (ol) for (let k = 0; k < Z; k++) outline(ctx, x0, y0, w, h);
@@ -77,9 +77,9 @@ function strip() {
   for (let i = 0; i < 8; i++) sprite(c, i * 96, 0, 96, 136, i * 45, 1, 2);
 }
 function sheet() {
-  const c = $('sheet').getContext('2d', {willReadFrequently:true}); c.clearRect(0, 0, 100, 52);
-  drawView(c, compose('front'), 2, 2); drawView(c, compose('side'), 38, 2); drawView(c, compose('back'), 66, 2);
-  outline(c, 0, 0, 100, 52);
+  const c = $('sheet').getContext('2d', {willReadFrequently:true}); c.clearRect(0, 0, 104, 52);
+  drawView(c, compose('front'), 2, 2); drawView(c, compose('side'), 38, 2); drawView(c, compose('back'), 70, 2);
+  outline(c, 0, 0, 104, 52);
 }
 function sync() { const a = Math.round(angle) % 360; $('ang').value = a; $('angv').textContent = a; }
 const stopAuto = () => { auto = false; $('auto').checked = false; };

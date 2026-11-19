@@ -46,7 +46,7 @@ function drawStack(ctx, layers, cx, cy, deg, tilt, sp, Z = 1) {   // Z: 描画�
   layers.forEach((L, z) => {
     for (let k = 0; k < Z; k++) {
       ctx.save(); ctx.translate(cx, Math.round(cy - z * sp * Z - k)); ctx.scale(Z, Z * tilt); ctx.rotate(a);
-      ctx.drawImage(L, -W / 2, -D / 2); ctx.restore();
+      ctx.drawImage(L, -W / 2, -(D - CY - 0.5)); ctx.restore();   // 体の中心(CY)を軸に回す
     }
   });
 }
@@ -54,8 +54,9 @@ function drawStack(ctx, layers, cx, cy, deg, tilt, sp, Z = 1) {   // Z: 描画�
 function compose(kind) {
   const w = kind === 'side' ? D : W, out = Array.from({length:H}, () => Array(w).fill(null));
   const mean = g => { let s = 0, n = 0; g.forEach(r => r.forEach((v, i) => { if (v) { s += i; n++; } })); return n ? s / n : 0; };
-  const info = parts.map((p, i) => ({p, i, my: mean(p.side), mx: mean(p.front)}));
-  info.sort((A, B) => (kind === 'front' ? B.my - A.my : kind === 'back' ? A.my - B.my : B.mx - A.mx) || A.i - B.i);
+  const info = parts.map((p, i) => ({p, i, my: p.depth ?? mean(p.side), mx: mean(p.front)}));
+  const r = Math.round;                                            // 同じ奥行なら後に書いたパーツを上に
+  info.sort((A, B) => (kind === 'front' ? r(B.my) - r(A.my) : kind === 'back' ? r(A.my) - r(B.my) : r(B.mx) - r(A.mx)) || A.i - B.i);
   for (const {p} of info) p[kind].forEach((r, z) => r.forEach((c, a) => { if (c) out[z][kind === 'back' ? W - 1 - a : a] = c; }));
   return out;
 }
