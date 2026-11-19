@@ -1,0 +1,190 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>sprite-stacking — 東雲はつり</title>
+<style>
+  :root { --bg:#14111f; --fg:#e9e4ff; --mut:#9a90c4; --acc:#b79df0; }
+  body { margin:0; background:var(--bg); color:var(--fg); font:14px/1.5 system-ui,sans-serif; }
+  main { max-width:980px; margin:0 auto; padding:16px; display:grid; gap:16px; }
+  h1 { font-size:18px; margin:0; }
+  p.sub { margin:0; color:var(--mut); }
+  .row { display:flex; gap:16px; flex-wrap:wrap; align-items:flex-start; }
+  canvas { image-rendering:pixelated; background:#201a33; border-radius:8px; touch-action:none; }
+  #stage { width:min(100%,640px); aspect-ratio:1; cursor:grab; }
+  .panel { display:grid; gap:10px; min-width:240px; flex:1; }
+  label { display:grid; gap:2px; color:var(--mut); }
+  input[type=range] { width:100%; accent-color:var(--acc); }
+  button { background:var(--acc); color:#1b1230; border:0; border-radius:6px; padding:8px 12px; font-weight:600; cursor:pointer; }
+  .views { display:flex; gap:12px; align-items:flex-end; }
+  .views figure { margin:0; text-align:center; color:var(--mut); font-size:12px; }
+  .views canvas { height:200px; width:auto; }
+</style>
+</head>
+<body>
+<main>
+  <h1>sprite stacking — 東雲はつり</h1>
+  <p class="sub">正面と横の2枚のピクセル絵を、1行ずつスライスにして1pxずつ積み、回転させる。</p>
+  <div class="row">
+    <canvas id="stage" width="80" height="80"></canvas>
+    <div class="panel">
+      <label><span>角度 <span id="angv">0</span>°</span><input id="ang" type="range" min="0" max="359" value="30"></label>
+      <label><span>スライス間隔 ×<span id="expv">1.0</span>（1.0 が通常）</span><input id="exp" type="range" min="10" max="60" value="10"></label>
+      <label><span><input id="auto" type="checkbox" checked> 自動回転</span></label>
+      <label><span><input id="shade" type="checkbox" checked> 高さの陰影</span></label>
+      <button id="sheet">スプライトシート(16方向)をPNGで保存</button>
+      <div class="views">
+        <figure><canvas id="vf"></canvas>正面の絵</figure>
+        <figure><canvas id="vs"></canvas>横の絵</figure>
+      </div>
+      <p class="sub">ドラッグで回転。猫しっぽ・ツインテールは2枚の絵に収まらないので、3Dで直接置いている。</p>
+    </div>
+  </div>
+</main>
+<script>
+"use strict";
+// ---- モデル: 正面(x×z)と横(y×z)の絵 → ボクセル -------------------------------
+const W = 16, D = 10, H = 38;           // x:幅 y:奥行(0=前) z:高さ(0=足元)
+const C = {
+  hair:'#b79df0', hairD:'#8f72d6', skin:'#ffdcc8', eye:'#27b3aa', eyeD:'#16403f',
+  white:'#f3f1fa', black:'#25212e', teal:'#3cc5bd',
+  hood:'#7a4fc9', hoodD:'#6440ac', lav:'#d3c2ff', shoe:'#5a35a0', cuff:'#7a4fc9',
+};
+const mk = () => Array.from({length:H}, () => Array(W).fill(null));
+const front = mk(), side = Array.from({length:H}, () => Array(D).fill(null));
+function rect(v, a0, a1, z0, z1, col) {
+  for (let z = z0; z <= z1; z++) for (let a = a0; a <= a1; a++) v[z][a] = col;
+}
+// 正面
+rect(front, 4,7,   0,2,  C.shoe); rect(front, 8,11, 0,2, C.shoe);
+rect(front, 5,6,   3,5,  C.white); rect(front, 9,10, 3,5, C.white);
+rect(front, 5,6,   6,6,  C.skin);  rect(front, 9,10, 6,6, C.skin);
+rect(front, 3,12,  7,8,  C.white);                       // パーカー裾の白リブ
+rect(front, 3,12,  9,19, C.hood);  rect(front, 7,8, 10,16, C.hoodD); // 前の折り目
+rect(front, 2,2,   9,18, C.lav);   rect(front, 13,13, 9,18, C.lav);  // 袖
+rect(front, 1,1,   9,18, C.lav);   rect(front, 14,14, 9,18, C.lav);
+rect(front, 1,2,   9,10, C.cuff);  rect(front, 13,14, 9,10, C.cuff);
+rect(front, 1,2,   7,8,  C.black); rect(front, 13,14, 7,8, C.black); // 手袋
+rect(front, 4,11,  19,20, C.white);                      // ヘッドホン
+rect(front, 7,8,   20,20, C.skin);
+rect(front, 3,12,  21,31, C.skin);                       // 顔
+rect(front, 3,12,  29,31, C.hair); rect(front, 3,3, 21,28, C.hair); rect(front, 12,12, 21,28, C.hair);
+rect(front, 5,6,   25,26, C.eye);  rect(front, 9,10, 25,26, C.eye);
+rect(front, 5,6,   26,26, C.eyeD); rect(front, 9,10, 26,26, C.eyeD);
+rect(front, 3,12,  31,31, C.black);                      // つば
+rect(front, 3,12,  32,35, C.white);                      // キャップ
+rect(front, 3,12,  32,32, C.teal);                       // 裏地
+rect(front, 4,5,   36,37, C.hair); rect(front, 10,11, 36,37, C.hair); // 猫耳
+// 横 (y=0 が前)
+rect(side, 1,6,    0,2,  C.shoe);
+rect(side, 3,5,    3,5,  C.white); rect(side, 3,5, 6,6, C.skin);
+rect(side, 2,7,    7,8,  C.white);
+rect(side, 2,7,    9,19, C.hood);
+rect(side, 3,6,    9,18, C.lav);  rect(side, 3,6, 7,8, C.black);
+rect(side, 2,7,    19,20,C.white);
+rect(side, 3,6,    20,20,C.skin);
+rect(side, 1,4,    21,31,C.skin);  rect(side, 5,8, 21,31, C.hair); // 顔 / 後ろ髪
+rect(side, 1,8,    29,31,C.hair);
+rect(side, 0,4,    31,31,C.black);                       // つば
+rect(side, 1,4,    32,35,C.white); rect(side, 5,8, 32,35, C.black);
+rect(side, 1,8,    32,32,C.teal);
+rect(side, 3,5,    36,37,C.hair);
+
+// 3D で直接置くパーツ（絵に収まらないもの）
+const extras = [];
+function put(x, y, z, col) { extras.push([x, y, z, col]); }
+for (const x of [1, 14]) for (let z = 8; z <= 28; z++) {      // ツインテール
+  const w = z < 12 ? 1 : 2;
+  for (let k = 0; k < w; k++) put(x === 1 ? x + k - (w-1) : x - k + (w-1), 7, z, z < 14 ? C.hairD : C.hair);
+  put(x, 8, z + 0, z < 14 ? C.hairD : C.hair);
+}
+for (const [x, y, z, col] of [                              // 猫しっぽ（白リボン付き）
+  [7,8,8,C.white],[8,8,8,C.white],[7,8,9,C.hair],[8,8,9,C.hair],[7,9,10,C.hair],[8,9,10,C.hair],
+  [7,9,11,C.hair],[8,9,11,C.hair],[8,9,12,C.hair],[9,9,13,C.hair],[9,9,14,C.hair],[9,9,15,C.hairD],
+]) put(x, y, z, col);
+
+// ボクセル化: 正面と横の両方に絵がある所だけ残す（visual hull）
+const vox = Array.from({length:H}, () => Array.from({length:D}, () => Array(W).fill(null)));
+for (let z = 0; z < H; z++) for (let y = 0; y < D; y++) for (let x = 0; x < W; x++) {
+  const f = front[z][x], s = side[z][y];
+  if (f && s) vox[z][y][x] = y < D/2 ? f : s;                 // 前半は正面の色、後半は横の色
+}
+for (const [x, y, z, col] of extras) vox[z][y][x] = col;
+
+const hex = c => [1,3,5].map(i => parseInt(c.slice(i, i+2), 16));
+function buildLayers(shade) {
+  // 最上段のボクセルは少し明るく
+  const top = Array.from({length:D}, () => Array(W).fill(-1));
+  for (let z = 0; z < H; z++) for (let y = 0; y < D; y++) for (let x = 0; x < W; x++) if (vox[z][y][x]) top[y][x] = z;
+  return Array.from({length:H}, (_, z) => {
+    const cv = document.createElement('canvas'); cv.width = W; cv.height = D;
+    const g = cv.getContext('2d'), im = g.createImageData(W, D);
+    const k = shade ? 0.82 + 0.18 * z / (H - 1) : 1;
+    for (let y = 0; y < D; y++) for (let x = 0; x < W; x++) {
+      const c = vox[z][y][x]; if (!c) continue;
+      const rgb = hex(c), b = (top[y][x] === z ? 1.12 : 1) * k;
+      const i = ((D - 1 - y) * W + x) * 4;                    // y=0(前) を画像の下側へ
+      im.data[i] = Math.min(255, rgb[0]*b); im.data[i+1] = Math.min(255, rgb[1]*b);
+      im.data[i+2] = Math.min(255, rgb[2]*b); im.data[i+3] = 255;
+    }
+    g.putImageData(im, 0, 0); return cv;
+  });
+}
+
+// ---- 描画 ---------------------------------------------------------------------
+const stage = document.getElementById('stage'), g = stage.getContext('2d');
+g.imageSmoothingEnabled = false;
+let layers = buildLayers(true), angle = 30, spread = 1, auto = true;
+
+function drawStack(ctx, cx, cy, deg, sp) {
+  ctx.imageSmoothingEnabled = false;
+  ctx.fillStyle = 'rgba(0,0,0,.28)';                          // 足元の影
+  ctx.beginPath(); ctx.ellipse(cx, cy + 1, 8, 4, 0, 0, Math.PI * 2); ctx.fill();
+  const a = deg * Math.PI / 180;
+  for (let z = 0; z < H; z++) {
+    ctx.save();
+    ctx.translate(cx, Math.round(cy - z * sp));
+    ctx.rotate(a);
+    ctx.drawImage(layers[z], -W / 2, -D / 2);
+    ctx.restore();
+  }
+}
+function render() {
+  g.clearRect(0, 0, 80, 80);
+  drawStack(g, 40, 62 + (spread - 1) * 6, angle, spread);
+}
+const $ = id => document.getElementById(id);
+function sync() { $('ang').value = Math.round(angle) % 360; $('angv').textContent = Math.round(angle) % 360; }
+$('ang').oninput = e => { angle = +e.target.value; auto = false; $('auto').checked = false; sync(); render(); };
+$('exp').oninput = e => { spread = e.target.value / 10; $('expv').textContent = spread.toFixed(1); render(); };
+$('auto').onchange = e => auto = e.target.checked;
+$('shade').onchange = e => { layers = buildLayers(e.target.checked); render(); };
+let drag = null;
+stage.onpointerdown = e => { drag = {x: e.clientX, a: angle}; stage.setPointerCapture(e.pointerId); auto = false; $('auto').checked = false; };
+stage.onpointermove = e => { if (drag) { angle = (drag.a + (e.clientX - drag.x) * 0.8 + 3600) % 360; sync(); render(); } };
+stage.onpointerup = () => drag = null;
+let last = 0;
+(function loop(t) {
+  if (auto) { angle = (angle + (t - last) * 0.04) % 360; sync(); render(); }
+  last = t; requestAnimationFrame(loop);
+})(0);
+
+// 元の絵
+function showView(id, v, w) {
+  const cv = $(id); cv.width = w; cv.height = H; const c = cv.getContext('2d');
+  for (let z = 0; z < H; z++) for (let a = 0; a < w; a++) if (v[z][a]) { c.fillStyle = v[z][a]; c.fillRect(a, H - 1 - z, 1, 1); }
+}
+showView('vf', front, W); showView('vs', side, D);
+
+// スプライトシート: 16方向を横に並べる（各セル 48x48）
+$('sheet').onclick = () => {
+  const N = 16, S = 48, sh = document.createElement('canvas'); sh.width = N * S; sh.height = S;
+  const c = sh.getContext('2d');
+  for (let i = 0; i < N; i++) { c.save(); c.beginPath(); c.rect(i * S, 0, S, S); c.clip(); drawStack(c, i * S + S / 2, S - 6, i * 360 / N, 1); c.restore(); }
+  sh.toBlob(b => { const a = document.createElement('a'); a.href = URL.createObjectURL(b); a.download = 'hatsuri-stack-16.png'; a.click(); });
+};
+render(); sync();
+</script>
+</body>
+</html>
